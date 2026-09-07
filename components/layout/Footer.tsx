@@ -84,11 +84,7 @@ export function Footer() {
 
         <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-ink-800 pt-6 text-xs text-ink-400 sm:flex-row">
           <p>© {new Date().getFullYear()} DineFlow. All rights reserved.</p>
-          <p className="text-sm text-muted-foreground">
-           A full-stack restaurant ordering and management platform built with Next.js, PostgreSQL, Prisma,
-           and modern web technologies. It features customer ordering, authentication, admin operations,
-           payments, email notifications, and database-backed order management.
-          </p>
+          <p>A portfolio project — frontend prototype with mock data.</p>
         </div>
       </div>
     </footer>

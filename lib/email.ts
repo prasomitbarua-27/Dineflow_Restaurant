@@ -101,10 +101,9 @@ function itemsTableHtml(order: Order): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// The emails this project sends. Call sites are documented on each
+// The three emails this project sends. Call sites are documented on each
 // function — see app/api/orders/route.ts, app/api/orders/[id]/route.ts,
-// app/api/payments/sslcommerz/{success,ipn}/route.ts, and
-// app/api/contact/route.ts.
+// and app/api/payments/sslcommerz/{success,ipn}/route.ts.
 // ─────────────────────────────────────────────────────────────────────────
 
 /** Sent to the customer once an order is genuinely confirmed — immediately
@@ -180,16 +179,19 @@ export async function sendNewOrderAlertEmail(order: Order, restaurantEmail: stri
   await sendEmailSafely({ to: restaurantEmail, subject: `New order: ${order.orderNumber}`, html });
 }
 
+interface ContactMessageInput {
+  name: string;
+  email: string;
+  message: string;
+}
+
 /** Sent to the restaurant's own inbox when a customer submits the contact
  *  form. Reply-To is set to the customer's address so the restaurant can
- *  just hit reply. Returns { sent: boolean } — deliberately NOT routed
- *  through sendEmailSafely() like the three functions above, since those
- *  are fire-and-forget by design (an email failure must never break an
- *  order), whereas the contact form's entire job IS sending this email —
- *  app/api/contact/route.ts needs to know if it genuinely failed so it can
- *  tell the customer honestly instead of showing a false "sent". */
+ *  just hit reply. Returns { sent: boolean } — deliberately NOT swallowed
+ *  like the order emails, since app/api/contact needs to surface a real
+ *  failure to the customer rather than show a false "Message sent!". */
 export async function sendContactMessageEmail(
-  input: { name: string; email: string; message: string },
+  input: ContactMessageInput,
   restaurantEmail: string
 ): Promise<{ sent: boolean }> {
   const resend = getResendClient();

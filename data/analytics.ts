@@ -1,6 +1,3 @@
-// No longer used by the running app — app/admin/page.tsx and
-// app/admin/analytics/page.tsx now compute real stats from live orders via
-// lib/analytics.ts. Left here only as a content/shape reference.
 import { DailyStat } from "@/types";
 
 // Last 7 days of revenue/orders for the admin dashboard overview chart.

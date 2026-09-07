@@ -17,6 +17,7 @@ export function FoodCard({ food, className }: { food: Food; className?: string }
   const { showToast } = useToast();
   const { categories } = useCatalog();
   const [isFavorite, setIsFavorite] = useState(false);
+  const [imageErrored, setImageErrored] = useState(false);
   const category = categories.find((c) => c.id === food.categoryId);
 
   function handleAddToCart(e: React.MouseEvent) {
@@ -43,11 +44,16 @@ export function FoodCard({ food, className }: { food: Food; className?: string }
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-ink-100">
         <Image
-          src={food.image}
+          src={
+            imageErrored || !food.image
+              ? "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80&auto=format&fit=crop"
+              : food.image
+          }
           alt={food.name}
           fill
           sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 25vw"
           className="object-cover transition-transform duration-300 group-hover:scale-105"
+          onError={() => setImageErrored(true)}
         />
         {!food.isAvailable && (
           <div className="absolute inset-0 flex items-center justify-center bg-ink-950/55">

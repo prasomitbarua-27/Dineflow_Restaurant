@@ -36,17 +36,19 @@ export default function AdminDashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Computed from real orders in the database — the mock analytics file
-  // is no longer used anywhere on this page.
+  // Computed from real orders in the database, not static mock data — the
+  // stat cards below AND the 7-day trend charts are both genuinely live,
+  // via lib/analytics.ts's buildDailyStats() (bucketed by real order
+  // createdAt timestamps, revenue counted only for paid orders).
   const todaysOrders = orders.filter((o) => isToday(o.createdAt));
   const todayRevenue = todaysOrders
     .filter((o) => o.paymentStatus === "paid")
     .reduce((sum, o) => sum + o.total, 0);
   const pendingOrders = orders.filter((o) => ["placed", "confirmed", "preparing"].includes(o.status)).length;
   const completedOrders = orders.filter((o) => o.status === "completed").length;
-  const last7DaysStats = buildDailyStats(orders, 7);
 
   const popularFoods = foods.filter((f) => f.isPopular).slice(0, 5);
+  const dailyStats = buildDailyStats(orders, 7);
   const recentOrders = [...orders]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 6);
@@ -79,7 +81,7 @@ export default function AdminDashboardPage() {
             <h2 className="font-display text-base font-semibold text-ink-900">Revenue — Last 7 Days</h2>
           </div>
           <div className="mt-2">
-            <RevenueChart data={last7DaysStats} />
+            <RevenueChart data={dailyStats} />
           </div>
         </div>
         <div className="rounded-2xl border border-ink-100 bg-white p-5 shadow-card">
@@ -94,7 +96,7 @@ export default function AdminDashboardPage() {
         <div className="rounded-2xl border border-ink-100 bg-white p-5 shadow-card lg:col-span-1">
           <h2 className="font-display text-base font-semibold text-ink-900">Orders — Last 7 Days</h2>
           <div className="mt-2">
-            <OrdersChart data={last7DaysStats} />
+            <OrdersChart data={dailyStats} />
           </div>
         </div>
         <div className="rounded-2xl border border-ink-100 bg-white p-5 shadow-card lg:col-span-2">

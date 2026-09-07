@@ -4,11 +4,11 @@ Tracking progress from frontend prototype → live, full-stack, client-ready pro
 
 | Phase | Description | Status |
 |---|---|---|
-| 1 | Database (Supabase Postgres + Prisma schema + seed data) | ✅ Code complete, live in production |
-| 2 | Backend API routes (foods, categories, orders, settings) replacing mock Context state | ✅ Code complete, live in production |
-| 3 | Real authentication (NextAuth.js) — customer accounts + protected admin routes | ✅ Code complete, live in production |
-| 4 | Real payments (gateway integration — deferred; Cash on Delivery live first) | ✅ Code complete, tested, pushed |
-| 5 | Image uploads via Supabase Storage (replacing hardcoded Unsplash URLs) | 🟡 Code complete — see `docs/PHASE-5-IMAGE-UPLOADS-SETUP.md` |
+| 1 | Database (Supabase Postgres + Prisma schema + seed data) | 🟡 In progress — see `docs/PHASE-1-DATABASE-SETUP.md` |
+| 2 | Backend API routes (foods, categories, orders, settings) replacing mock Context state | ⬜ Not started |
+| 3 | Real authentication (NextAuth.js) — customer accounts + protected admin routes | ⬜ Not started |
+| 4 | Real payments (gateway integration — deferred; Cash on Delivery live first) | ⬜ Not started |
+| 5 | Image uploads via Supabase Storage (replacing hardcoded Unsplash URLs) | ⬜ Not started |
 | 6 | Order notifications (confirmation email to customer, new-order alert to restaurant) | ⬜ Not started |
 | 7 | Deployment (Vercel + custom domain + SSL + environment variables) | ⬜ Not started |
 | 8 | Security hardening (input validation, rate limiting, secrets review) | ⬜ Not started |
@@ -19,7 +19,7 @@ Tracking progress from frontend prototype → live, full-stack, client-ready pro
 
 - **Database:** Supabase (PostgreSQL + Storage)
 - **Auth:** NextAuth.js (self-hosted, Credentials provider + Prisma adapter)
-- **Payments:** Cash on Delivery, plus real online payment via SSLCommerz (cards, bKash, Nagad, Rocket, bank transfer) — see Phase 4
+- **Payments:** Cash on Delivery live at launch; online gateway (likely SSLCommerz) added post-launch
 - **Hosting:** Vercel (assumed — confirm before Phase 7)
 
 ## How to pick this back up in a new session

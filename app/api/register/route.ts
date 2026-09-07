@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { withErrorHandling, apiError } from "@/lib/api-helpers";
+import { withErrorHandling, apiError, apiRateLimited } from "@/lib/api-helpers";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 const registerSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
@@ -15,6 +16,13 @@ const registerSchema = z.object({
 // Does NOT log the user in — the Register page calls signIn() itself right
 // after this succeeds, so NextAuth issues the session cookie the normal way.
 export const POST = withErrorHandling(async (req: NextRequest) => {
+  // 5 accounts per hour per IP — registration is a one-time action for a
+  // genuine user, so this can be much stricter than the checkout limit
+  // while still leaving room for a shared IP (office wifi, etc.) to have
+  // a few people sign up around the same time.
+  const rateLimit = checkRateLimit(`register:${getClientIp(req)}`, 5, 60 * 60 * 1000);
+  if (!rateLimit.success) return apiRateLimited(rateLimit.resetAt);
+
   const body = await req.json();
   const input = registerSchema.parse(body);
 

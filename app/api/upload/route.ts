@@ -1,27 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/session";
-import { apiError, withErrorHandling } from "@/lib/api-helpers";
 import { supabaseAdmin, FOOD_IMAGES_BUCKET } from "@/lib/supabase-admin";
+import { withErrorHandling, apiError } from "@/lib/api-helpers";
+import { generateId } from "@/lib/utils";
 
-// POST /api/upload — accepts a single image file (multipart/form-data,
-// field name "file") and stores it in the Supabase Storage bucket used for
-// food/category photos. Admin-only — this is how the admin panel's
-// FoodFormModal / CategoryFormModal upload real photos (Phase 5), replacing
-// the old "paste any image URL" text field.
-//
-// The client (ImageUploadField) already compresses/resizes the image in the
-// browser before sending it here (see lib/image-client.ts), but this route
-// re-checks type and size on the server too — never trust the client alone,
-// since the compression step can be bypassed by anyone calling this API
-// directly.
-const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5MB
-const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-const EXTENSION_BY_TYPE: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-};
+const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5MB — matches lib/image-compress.ts's client-side check;
+// enforced again here since a client-side check alone is never trustworthy
+// (anyone can call this API directly with any file, bypassing the browser).
+const ACCEPTED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
+// POST /api/upload — accepts a single image file as multipart/form-data
+// (field name "file"), uploads it to the "food-images" Supabase Storage
+// bucket, and returns its public URL. Admin-only.
 export const POST = withErrorHandling(async (req: NextRequest) => {
   const { error } = await requireAdmin();
   if (error) return error;
@@ -32,42 +22,33 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
   if (!(file instanceof File)) {
     return apiError("No file was uploaded.", 400);
   }
-  if (!ALLOWED_TYPES.has(file.type)) {
-    return apiError("Only JPEG, PNG, or WEBP images are allowed.", 400);
+  if (!ACCEPTED_TYPES.has(file.type)) {
+    return apiError("Only JPEG, PNG, WEBP, or GIF images are allowed.", 400);
   }
-  if (file.size > MAX_FILE_BYTES) {
-    return apiError("Image is too large. Please use a file under 5MB.", 400);
+  if (file.size > MAX_SIZE_BYTES) {
+    return apiError("Image is too large — please use a file under 5MB.", 400);
   }
 
-  const extension = EXTENSION_BY_TYPE[file.type];
-  // Random-ish, collision-safe filename — we don't need to preserve the
-  // original filename, and not doing so avoids ever trusting user input in
-  // a storage path.
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${extension}`;
+  const extension = file.type.split("/")[1] === "jpeg" ? "jpg" : file.type.split("/")[1];
+  const path = `${generateId("img")}.${extension}`;
 
   const arrayBuffer = await file.arrayBuffer();
-
   const { error: uploadError } = await supabaseAdmin.storage
     .from(FOOD_IMAGES_BUCKET)
-    .upload(filename, arrayBuffer, {
+    .upload(path, arrayBuffer, {
       contentType: file.type,
-      cacheControl: "31536000", // 1 year — filenames are unique per upload, never reused
+      cacheControl: "31536000", // 1 year — uploaded filenames are unique (see generateId), so a
+      // given path's content never changes; safe to cache aggressively at the CDN/browser level.
       upsert: false,
     });
 
   if (uploadError) {
-    console.error("Supabase Storage upload error:", uploadError);
-    // The most common cause here is the bucket not existing yet — see
-    // docs/PHASE-5-IMAGE-UPLOADS-SETUP.md.
-    return apiError(
-      "Could not upload the image. Make sure the 'food-images' Storage bucket has been created in Supabase (see docs/PHASE-5-IMAGE-UPLOADS-SETUP.md).",
-      500
-    );
+    // Common cause: the "food-images" bucket doesn't exist yet — see
+    // docs/PHASE-5-IMAGE-UPLOAD-SETUP.md for how to create it.
+    return apiError(`Upload failed: ${uploadError.message}`, 500);
   }
 
-  const { data: publicUrlData } = supabaseAdmin.storage
-    .from(FOOD_IMAGES_BUCKET)
-    .getPublicUrl(filename);
+  const { data: publicUrlData } = supabaseAdmin.storage.from(FOOD_IMAGES_BUCKET).getPublicUrl(path);
 
   return NextResponse.json({ url: publicUrlData.publicUrl }, { status: 201 });
 });

@@ -12,6 +12,16 @@ export function apiValidationError(err: ZodError) {
   return apiError(`Invalid request: ${message}`, 400);
 }
 
+/** Standard 429 response for a rate-limited request, with a Retry-After
+ * header so well-behaved clients know how long to back off. */
+export function apiRateLimited(resetAt: number) {
+  const retryAfterSeconds = Math.max(1, Math.ceil((resetAt - Date.now()) / 1000));
+  return NextResponse.json(
+    { error: "Too many requests. Please wait a moment and try again." },
+    { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } }
+  );
+}
+
 /**
  * Wraps a route handler so any unexpected error (e.g. a database connection
  * issue) becomes a clean 500 response instead of crashing the function or

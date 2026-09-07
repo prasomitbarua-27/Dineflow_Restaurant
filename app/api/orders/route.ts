@@ -4,11 +4,12 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { serializeOrder, orderTypeToDb, paymentMethodToDb } from "@/lib/serializers";
 import { placeOrderInputSchema } from "@/lib/validation";
-import { withErrorHandling, apiError } from "@/lib/api-helpers";
+import { withErrorHandling, apiError, apiRateLimited } from "@/lib/api-helpers";
 import { requireAdmin } from "@/lib/session";
 import { generateOrderNumber } from "@/lib/utils";
 import { sendOrderConfirmationEmail, sendNewOrderAlertEmail } from "@/lib/email";
 import { defaultRestaurantSettings } from "@/data/restaurant";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 // GET /api/orders            — every order, newest first. Admin-only.
 // GET /api/orders?mine=true  — only the logged-in customer's own orders.
@@ -49,6 +50,13 @@ export const GET = withErrorHandling(async (req: NextRequest) => {
 // account (via the session, never a client-supplied id) so it shows up in
 // their "My Orders" page automatically.
 export const POST = withErrorHandling(async (req: NextRequest) => {
+  // 10 orders per 10 minutes per IP — generous enough for a genuine
+  // customer (including retries after a failed payment), tight enough to
+  // blunt a scripted spam-order attempt. Checked before touching the
+  // database at all.
+  const rateLimit = checkRateLimit(`place-order:${getClientIp(req)}`, 10, 10 * 60 * 1000);
+  if (!rateLimit.success) return apiRateLimited(rateLimit.resetAt);
+
   const session = await getServerSession(authOptions);
 
   const body = await req.json();

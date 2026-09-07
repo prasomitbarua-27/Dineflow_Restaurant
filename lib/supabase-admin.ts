@@ -1,32 +1,22 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Server-only Supabase client using the SERVICE ROLE key — this bypasses
-// Row Level Security entirely, so this file must never be imported from
-// anything that runs in the browser (no "use client" component, no
-// client-side hook). It's used by app/api/upload/route.ts, which is a
-// server-side route handler that already gates access with requireAdmin()
-// before this client is ever touched.
-//
-// Do not reuse this for reading/writing the Postgres tables — Prisma
-// (lib/prisma.ts) is the source of truth for that. This client exists only
-// for Supabase Storage (file uploads), which Prisma doesn't cover.
-
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-  throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL environment variable.");
-}
-if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY environment variable.");
-}
-
+// This client uses the SERVICE ROLE key, which bypasses Row Level
+// Security and has full access to the project — it must NEVER be
+// imported into any file that could end up in client-side JavaScript.
+// Only import this from API routes (app/api/**/route.ts) or other
+// server-only code. The env var itself has no `NEXT_PUBLIC_` prefix for
+// the same reason — Next.js only exposes `NEXT_PUBLIC_*` vars to the
+// browser, so this one is server-only by construction, but the naming
+// alone isn't a substitute for being careful about where it's imported.
 export const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
   {
-    auth: { autoRefreshToken: false, persistSession: false },
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
   }
 );
 
-// Bucket used for all food/category photos uploaded via the admin panel.
-// Created manually in the Supabase dashboard — see
-// docs/PHASE-5-IMAGE-UPLOADS-SETUP.md.
 export const FOOD_IMAGES_BUCKET = "food-images";

@@ -29,12 +29,11 @@ interface OrderContextValue {
   loadAll: () => Promise<void>;
   /** Loads only the logged-in customer's own orders. Call from My Orders. */
   loadMine: () => Promise<void>;
-  /** Admin-only: silently re-fetches every order in the background, without
-   *  touching isLoading or error. Use this for polling/auto-refresh (see
-   *  app/admin/layout.tsx) — loadAll() is for the one real "first load,"
-   *  where showing a loading skeleton is correct; a background poll every
-   *  few seconds should update the data without flashing every admin
-   *  page's skeleton back on top of content that's already loaded fine. */
+  /** Same request as loadAll(), but never touches isLoading or error —
+   *  for background polling (see app/admin/layout.tsx) where the goal is
+   *  to keep `orders` fresh silently, not to re-trigger a full-page
+   *  loading skeleton or error banner over data that was displaying
+   *  fine a moment ago. */
   refreshAll: () => Promise<void>;
 }
 
@@ -90,11 +89,14 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Same request as loadAll(), but never touches isLoading or error — see
-  // the doc comment on refreshAll in OrderContextValue for why. A failed
-  // background poll fails silently and just tries again on the next
-  // interval, rather than surfacing an error banner over data that was
-  // displaying just fine a moment ago.
+  // Same request as loadAll(), but never touches isLoading or error — a
+  // failed background poll fails silently and just tries again on the
+  // next interval, rather than surfacing an error banner or re-triggering
+  // a loading skeleton over data that was displaying just fine a moment
+  // ago. This is what fixed a real bug: app/admin/layout.tsx's 10-second
+  // poll was originally calling loadAll() directly, which meant every
+  // poll flipped isLoading true→false again, visibly "flashing" every
+  // admin page's full skeleton every 10 seconds.
   async function refreshAll() {
     try {
       const res = await fetch("/api/orders");

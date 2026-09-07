@@ -282,18 +282,117 @@
     .hero h1 { font-size: 32px; }
     .meta-row { gap: 20px; }
   }
+
+  /* Added for the full-stack rewrite */
+  .metric-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 24px;
+  }
+  .metric {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--ink-700);
+    border-radius: 12px;
+    padding: 16px 14px;
+    text-align: center;
+  }
+  .metric .num {
+    font-family: 'Fraunces', serif;
+    font-size: 26px;
+    font-weight: 600;
+    color: #E8A455;
+    line-height: 1.1;
+  }
+  .metric .label {
+    font-size: 11.5px;
+    color: #9C9284;
+    margin-top: 4px;
+  }
+  .bug-box {
+    border-left: 3px solid var(--error, #C0392B);
+    background: #FBEAE8;
+    border-radius: 0 10px 10px 0;
+    padding: 14px 16px;
+    margin-top: 12px;
+  }
+  .bug-box .bug-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9E2E22;
+    margin-bottom: 4px;
+  }
+  .bug-box p { color: #7a2a22; font-size: 14px; margin: 0; }
+  :root { --error: #C0392B; }
+  .timeline { margin-top: 20px; }
+  .timeline-item {
+    display: flex;
+    gap: 14px;
+    padding-bottom: 20px;
+    position: relative;
+  }
+  .timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 13px;
+    top: 28px;
+    bottom: 0;
+    width: 1.5px;
+    background: var(--ink-100);
+  }
+  .timeline-dot {
+    flex-shrink: 0;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--ember-500);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+    z-index: 1;
+  }
+  .timeline-body h3 { font-size: 15.5px; margin: 2px 0 4px; font-weight: 600; }
+  .timeline-body p { font-size: 13.5px; margin: 0; }
+
+  .shot-filled {
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--ink-50);
+    border: 1px solid var(--ink-100);
+  }
+  .shot-filled img { display: block; width: 100%; height: auto; }
+  .shot-filled .caption {
+    padding: 10px 14px;
+    font-size: 12.5px;
+    color: var(--ink-500);
+    background: #fff;
+  }
+  .shot-filled .caption strong { color: var(--ink-800); }
+  .proof-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 16px;
+  }
+  .proof-grid img {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--ink-100);
+    display: block;
+  }
 </style>
 </head>
 <body>
 
   <div class="hero">
     <div class="wrap">
-      <span class="eyebrow">Case Study · Full-Stack SaaS Platform</span>
-      <h1>DineFlow — Restaurant Ordering &amp; Management Platform</h1>
+      <span class="eyebrow">Case Study · Full-Stack SaaS Platform, Built &amp; Shipped Solo</span>
+      <h1>DineFlow — A Real Restaurant Ordering &amp; Management Platform</h1>
       <p class="subtitle">
-        A complete restaurant SaaS built from scratch: a customer ordering storefront and an
-        admin management dashboard, architected to grow from a mock-data prototype into a
-        live, database-backed product.
+        A production-grade restaurant SaaS: a customer ordering storefront and a full admin
+        back office, backed by a real database, real authentication, a real payment gateway,
+        real image uploads, and real transactional email — live in production, not a mockup.
       </p>
 
       <div class="cta-links">
@@ -301,22 +400,29 @@
         <a href="#" class="btn btn-outline">View Source (GitHub)</a>
       </div>
 
+      <div class="metric-row">
+        <div class="metric"><div class="num">17</div><div class="label">API routes</div></div>
+        <div class="metric"><div class="num">9</div><div class="label">database models</div></div>
+        <div class="metric"><div class="num">4</div><div class="label">third-party integrations</div></div>
+        <div class="metric"><div class="num">26</div><div class="label">pages built</div></div>
+      </div>
+
       <div class="meta-row">
         <div class="meta-item">
           <div class="label">Role</div>
-          <div class="value">Full-Stack Developer</div>
-        </div>
-        <div class="meta-item">
-          <div class="label">Timeline</div>
-          <div class="value">Solo project</div>
+          <div class="value">Full-Stack Developer (solo)</div>
         </div>
         <div class="meta-item">
           <div class="label">Stack</div>
-          <div class="value">Next.js · TypeScript · Supabase</div>
+          <div class="value">Next.js · TypeScript · PostgreSQL</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Integrations</div>
+          <div class="value">SSLCommerz · Resend · Supabase</div>
         </div>
         <div class="meta-item">
           <div class="label">Status</div>
-          <div class="value">Live — in active development</div>
+          <div class="value">Live in production</div>
         </div>
       </div>
     </div>
@@ -327,30 +433,33 @@
       <div class="section-label">Overview</div>
       <h2 class="section-title">What DineFlow is</h2>
       <p>
-        DineFlow is a two-sided restaurant platform: a polished customer storefront for
-        browsing a menu, ordering food, and tracking delivery status, paired with a full
-        admin dashboard for managing the menu, orders, payments, and sales analytics —
-        the kind of internal tooling a real restaurant business runs on day to day.
+        DineFlow is a two-sided restaurant platform, built to the point where a real restaurant
+        could actually run their ordering operation on it — not a portfolio demo dressed up to
+        look finished. Customers browse a menu, order, pay online or on delivery, and track
+        their order status in real time. The restaurant's team manages the entire menu, watches
+        orders arrive live, updates order status through a pipeline, and gets automatic email
+        alerts and analytics — all through an admin dashboard locked behind real authentication.
       </p>
       <p>
-        The project was built in two deliberate stages: first a complete, realistic
-        frontend using mock data to validate every user flow and get the design right,
-        then a systematic migration to a real PostgreSQL database, authentication, and
-        cloud deployment — mirroring how a lot of real product work actually happens.
+        It was built deliberately in phases: a complete, realistic frontend first (to validate
+        every user flow and get the design right before wiring anything up), then a systematic
+        build-out of the real backend — database, authentication, payments, file storage, and
+        email — each phase tested end-to-end in a live sandbox before moving to the next, and
+        each one deployed and verified in production, not just locally.
       </p>
 
       <div class="grid-3">
         <div class="card">
           <h3>Customer Experience</h3>
-          <p>Menu browsing with search &amp; filters, cart, checkout, live order tracking, and order history.</p>
+          <p>Menu browsing with search &amp; filters, cart, checkout with real online payment, live order tracking, order history behind login.</p>
         </div>
         <div class="card">
-          <h3>Admin Dashboard</h3>
-          <p>Food &amp; category management, order pipeline control, payment overview, and sales analytics.</p>
+          <h3>Admin Back Office</h3>
+          <p>Role-protected dashboard: menu &amp; category management with photo uploads, live order pipeline, payment reconciliation, sales analytics.</p>
         </div>
         <div class="card">
-          <h3>Production Path</h3>
-          <p>Architected from day one to swap mock data for a real database without a rewrite.</p>
+          <h3>Real Infrastructure</h3>
+          <p>Postgres database, session-based auth, a real payment gateway, real file storage, and real transactional email — every "Phase" below is live.</p>
         </div>
       </div>
     </div>
@@ -359,8 +468,8 @@
   <section class="alt">
     <div class="wrap">
       <div class="section-label">Tech Stack</div>
-      <h2 class="section-title">Built with a modern, production-grade toolset</h2>
-      <p>Every choice was made with a real deployment in mind, not just a demo.</p>
+      <h2 class="section-title">Every layer is real, not mocked</h2>
+      <p>No layer of this stack is a stand-in for "the real thing later" — the payment gateway processes real sandbox transactions with real validation, the email system sends real deliverable email, the auth system issues real sessions.</p>
       <div class="pill-row">
         <span class="pill">Next.js 14 (App Router)</span>
         <span class="pill">TypeScript</span>
@@ -369,6 +478,9 @@
         <span class="pill">PostgreSQL (Supabase)</span>
         <span class="pill">Supabase Storage</span>
         <span class="pill">NextAuth.js</span>
+        <span class="pill">SSLCommerz Payment Gateway</span>
+        <span class="pill">Resend (Transactional Email)</span>
+        <span class="pill">Zod Validation</span>
         <span class="pill">Recharts</span>
         <span class="pill">Vercel</span>
       </div>
@@ -378,15 +490,18 @@
   <section>
     <div class="wrap">
       <div class="section-label">Key Features</div>
-      <h2 class="section-title">What's fully working</h2>
+      <h2 class="section-title">What's actually working, end to end</h2>
       <ul class="feature-list">
-        <li><span class="check">✓</span> Menu browsing with live search, category filters, and price filters</li>
-        <li><span class="check">✓</span> Persistent shopping cart with quantity controls</li>
-        <li><span class="check">✓</span> Full checkout flow — delivery/pickup, payment method selection</li>
-        <li><span class="check">✓</span> Visual, real-time order status tracker (Placed → Confirmed → Preparing → Ready → Completed)</li>
-        <li><span class="check">✓</span> Admin CRUD for foods and categories, including availability toggles</li>
-        <li><span class="check">✓</span> Admin order pipeline — filter by status, update status, reflected instantly on the customer side</li>
-        <li><span class="check">✓</span> Dashboard analytics — revenue &amp; order trend charts, category performance, top sellers</li>
+        <li><span class="check">✓</span> Menu browsing with live search, category filters, and price filters — backed by a real Postgres query, not a static array</li>
+        <li><span class="check">✓</span> Full authentication: email/password accounts, hashed with bcrypt, session-based via NextAuth, role-based access control</li>
+        <li><span class="check">✓</span> The entire admin dashboard is locked behind route middleware AND server-side checks on every API route — defense in depth, not just a hidden link</li>
+        <li><span class="check">✓</span> Real online payments via SSLCommerz (cards, bKash, Nagad, Rocket, bank transfer) with server-to-server payment validation and a webhook fallback for reliability</li>
+        <li><span class="check">✓</span> Cash on Delivery as a first-class alternative, not an afterthought</li>
+        <li><span class="check">✓</span> Real photo uploads for menu items — client-side compressed in the browser before upload, stored in cloud object storage</li>
+        <li><span class="check">✓</span> Automatic transactional email: order confirmations, status updates, and new-order alerts to the restaurant — all fail-safe, so an email outage can never break checkout</li>
+        <li><span class="check">✓</span> Live admin dashboard — new orders appear automatically with a toast notification, no manual refresh</li>
+        <li><span class="check">✓</span> Visual, real-time order status tracker for customers, polling for live updates</li>
+        <li><span class="check">✓</span> Admin CRUD for foods and categories, sales analytics with revenue/order trend charts</li>
         <li><span class="check">✓</span> Fully responsive across mobile, tablet, and desktop</li>
       </ul>
     </div>
@@ -396,31 +511,108 @@
     <div class="wrap">
       <div class="section-label">Screenshots</div>
       <h2 class="section-title">Product walkthrough</h2>
-      <p>Replace these placeholders with real screenshots once the UI is finalized.</p>
-      <div class="grid-2">
-        <div class="shot"><strong>Homepage</strong>Hero, featured categories, popular dishes</div>
-        <div class="shot"><strong>Menu &amp; Search</strong>Filtering, sorting, category tabs</div>
-        <div class="shot"><strong>Order Tracking</strong>Visual status pipeline</div>
-        <div class="shot"><strong>Admin Dashboard</strong>Revenue charts &amp; recent orders</div>
+      <p>The live menu, pulling real product photos from cloud storage through the full search and filter UI.</p>
+      <div class="shot-filled">
+        <img src="screenshot-menu.png" alt="DineFlow live menu page with search, category filters, and real product photography" />
+        <div class="caption"><strong>Live menu page</strong> — dineflow-restaurant-two.vercel.app/menu</div>
+      </div>
+
+      <div class="grid-2" style="margin-top:16px;">
+        <div class="shot"><strong>Checkout &amp; Payment</strong>SSLCommerz hosted payment page, Cash on Delivery option</div>
+        <div class="shot"><strong>Order Tracking</strong>Visual status pipeline, live-updating</div>
+        <div class="shot"><strong>Admin Dashboard</strong>Live order feed, revenue charts, notification bell</div>
+        <div class="shot"><strong>Admin Foods/Categories</strong>Photo upload with client-side compression</div>
       </div>
     </div>
   </section>
 
   <section>
     <div class="wrap">
+      <div class="section-label">Verified in Production</div>
+      <h2 class="section-title">Not claims — proof</h2>
+      <p>
+        Real automated emails, received in a real inbox, generated by a real order placed through
+        the live checkout flow — not a mockup of what an email like this might look like.
+      </p>
+      <div class="proof-grid">
+        <div class="shot-filled">
+          <img src="screenshot-order-alert-email.jpeg" alt="Real 'New order received' email delivered to the restaurant's inbox, showing order DF-95028 with real order details" />
+          <div class="caption"><strong>Restaurant order alert</strong> — sent automatically the moment an order is placed</div>
+        </div>
+        <div class="shot-filled">
+          <img src="screenshot-order-completed-email.jpeg" alt="Real 'Order completed' confirmation email delivered to the customer for order DF-95028" />
+          <div class="caption"><strong>Customer status update</strong> — sent automatically when the admin marks the order complete</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-label">Engineering Process</div>
+      <h2 class="section-title">Built in verified, sequential phases</h2>
+      <p>Each phase was scoped, built, deployed, tested against real infrastructure, and confirmed working before the next one started — not a single big-bang rewrite.</p>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-dot">1</div>
+          <div class="timeline-body">
+            <h3>Frontend prototype</h3>
+            <p>Full customer + admin UI on realistic mock data, to validate every flow and get the design system right before touching a database.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot">2</div>
+          <div class="timeline-body">
+            <h3>Database &amp; API layer</h3>
+            <p>PostgreSQL schema via Prisma, 15 REST API routes replacing every mock data source, with Zod validation on every input.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot">3</div>
+          <div class="timeline-body">
+            <h3>Authentication &amp; authorization</h3>
+            <p>NextAuth.js sessions, bcrypt password hashing, route middleware, and server-side role checks on every admin-only endpoint.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot">4</div>
+          <div class="timeline-body">
+            <h3>Payment gateway integration</h3>
+            <p>SSLCommerz sandbox — hosted checkout, server-to-server transaction validation, and a webhook for reliability, with a full success/fail/cancel/retry flow.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot">5</div>
+          <div class="timeline-body">
+            <h3>Media pipeline</h3>
+            <p>Client-side image compression and cloud storage uploads for menu photos, replacing pasted stock-image URLs.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot">6</div>
+          <div class="timeline-body">
+            <h3>Transactional email</h3>
+            <p>Automatic, fail-safe order confirmation, status-update, and restaurant-alert emails — verified via delivery logs, not just "it compiled."</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt">
+    <div class="wrap">
       <div class="section-label">Architecture Decisions</div>
-      <h2 class="section-title">Challenges &amp; how they were solved</h2>
+      <h2 class="section-title">Notable technical decisions</h2>
 
       <div class="challenge">
         <span class="tag">Data layer</span>
         <h3>Designing for a mock-to-real migration from day one</h3>
         <p>
-          Rather than hardcoding data into components, all catalog and order state was
-          routed through dedicated React Context providers (<code>CatalogContext</code>,
-          <code>OrderContext</code>) with a shape matching the eventual Prisma schema.
-          This meant the entire admin CRUD experience could be built and fully tested
-          before a database even existed — and migrating to real API calls later is a
-          contained change, not a rewrite.
+          Every piece of catalog and order state was routed through dedicated Context providers
+          from the very first line of frontend code, shaped to match the eventual database
+          schema. The entire admin CRUD experience was fully built and tested before a database
+          even existed — migrating to real API calls later was a contained, predictable change,
+          not a rewrite.
         </p>
       </div>
 
@@ -428,23 +620,128 @@
         <span class="tag">Database</span>
         <h3>Serverless-safe Postgres connections</h3>
         <p>
-          Supabase's connection pooler (PgBouncer) doesn't support prepared statements
-          the way some tooling expects. The project uses two distinct connection strings —
-          a pooled connection for the running app (safe under Vercel's serverless
-          concurrency) and a direct connection reserved for Prisma CLI migrations —
-          avoiding a class of connection-exhaustion bugs common in serverless deployments.
+          Supabase's connection pooler doesn't support prepared statements the way schema
+          migrations expect. The project uses two distinct connection strings — a pooled
+          connection for the running app (safe under Vercel's serverless concurrency) and a
+          direct connection reserved for Prisma CLI migrations — avoiding a class of
+          connection-exhaustion bugs common in serverless + Postgres deployments.
         </p>
       </div>
 
       <div class="challenge">
-        <span class="tag">Content integrity</span>
-        <h3>Verifying every image against a live source</h3>
+        <span class="tag">Payments</span>
+        <h3>A dual-callback pattern for payment reliability</h3>
         <p>
-          Placeholder imagery sourced from memory included several invalid CDN references.
-          Rather than leave broken images in a "finished" product, every food and category
-          image was individually verified against Unsplash's live search index and replaced
-          with confirmed-working URLs — a small detail, but the kind that separates a demo
-          from something a client can actually show customers.
+          The checkout flow doesn't rely solely on the customer's browser redirecting back after
+          payment — if their connection drops right after paying, that redirect might never
+          happen. A server-to-server webhook (IPN) runs independently of the customer's browser
+          as a reliable fallback, and both paths share the same idempotency guard so a payment
+          can never be double-processed or double-emailed, no matter which path fires first —
+          or if both do.
+        </p>
+      </div>
+
+      <div class="challenge">
+        <span class="tag">Security</span>
+        <h3>Never trusting a client-supplied "it worked"</h3>
+        <p>
+          Every payment is re-validated server-to-server against SSLCommerz's own API before an
+          order is ever marked paid — a redirect claiming success is never taken at face value.
+          The admin dashboard is protected at two independent layers: route middleware that
+          redirects unauthenticated or non-admin visitors before the page even renders, and a
+          server-side role check on every single mutating API route underneath it, so the data
+          layer is never exposed even if a UI-layer check were ever bypassed.
+        </p>
+      </div>
+
+      <div class="challenge">
+        <span class="tag">Media</span>
+        <h3>Image compression without a native server dependency</h3>
+        <p>
+          Photo uploads are resized and compressed in the browser using the Canvas API before
+          they're ever sent to the server — deliberately avoiding a native image-processing
+          library like Sharp on the server side, which introduces real deployment risk on
+          serverless platforms. A 12MB phone photo typically becomes a few hundred KB before it
+          ever leaves the customer's — or admin's — browser.
+        </p>
+      </div>
+
+      <div class="challenge">
+        <span class="tag">Reliability</span>
+        <h3>Email that can never break the product</h3>
+        <p>
+          Every email send is wrapped so a provider outage or misconfiguration can only ever
+          skip the email — never throw, never fail a checkout, never block an admin action. The
+          product's core function always takes priority over a nice-to-have notification.
+        </p>
+      </div>
+
+      <div class="challenge">
+        <span class="tag">Security</span>
+        <h3>Rate limiting, applied honestly</h3>
+        <p>
+          Checkout, registration, login, and the contact form are all rate-limited against abuse
+          — but the limitation of an in-memory limiter on a serverless platform is documented
+          directly in the code, not glossed over: it meaningfully raises the bar against a
+          scripted attack without being a mathematically airtight distributed guarantee. Knowing
+          the exact edges of a security control — and writing them down — matters more than
+          appearing to have solved something completely.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-label">Quality Process</div>
+      <h2 class="section-title">Bugs found before they shipped</h2>
+      <p>
+        Real engineering isn't writing code that looks right — it's catching what's wrong before
+        a user does. A few examples caught during development and code review, not by a customer
+        in production:
+      </p>
+
+      <div class="bug-box">
+        <div class="bug-label">Caught in review — payment status</div>
+        <p>
+          Order creation was briefly marking online payments as "paid" immediately at checkout,
+          before the customer had even reached the payment gateway. Combined with how the
+          failure-handling logic worked, this would have permanently prevented an abandoned or
+          declined payment from ever being correctly marked as failed. Fixed before deployment —
+          every order now starts pending regardless of payment method; only a validated gateway
+          confirmation marks it paid.
+        </p>
+      </div>
+
+      <div class="bug-box">
+        <div class="bug-label">Caught in review — database integrity</div>
+        <p>
+          The original schema required every menu item to belong to a category with no way to
+          remove that link — meaning deleting a category with active menu items would fail at
+          the database level with a constraint error, contradicting what the admin UI already
+          promised the user. Fixed by making the relationship optional with a proper cascading
+          behavior, before it ever reached a real admin's hands.
+        </p>
+      </div>
+
+      <div class="bug-box">
+        <div class="bug-label">Caught by production build — type safety</div>
+        <p>
+          A production build on Vercel caught a genuine type mismatch between seed data and an
+          evolved database schema that local development never surfaced — Next.js's production
+          build runs a full TypeScript check that dev mode skips for speed. Fixed and
+          redeployed the same day.
+        </p>
+      </div>
+
+      <div class="bug-box">
+        <div class="bug-label">Caught in review — status-change emails</div>
+        <p>
+          An early version of the status-update email logic compared the frontend's status
+          format against the database's raw format directly — two values that could never be
+          equal as strings, which would have fired a "status changed" email on every single admin
+          action regardless of whether the status actually changed. Caught on re-read before
+          shipping, fixed by normalizing both sides to the same format before comparing.
         </p>
       </div>
     </div>
@@ -459,13 +756,17 @@
           <tr><th>Area</th><th>Status</th></tr>
         </thead>
         <tbody>
-          <tr><td>Frontend UI (customer + admin)</td><td><span class="badge badge-done">Complete</span></td></tr>
-          <tr><td>Live deployment (Vercel)</td><td><span class="badge badge-done">Complete</span></td></tr>
-          <tr><td>Database schema &amp; hosting (Supabase)</td><td><span class="badge badge-done">Complete</span></td></tr>
-          <tr><td>API layer connecting UI to database</td><td><span class="badge badge-progress">In Progress</span></td></tr>
-          <tr><td>Authentication &amp; protected admin routes</td><td><span class="badge badge-planned">Planned</span></td></tr>
-          <tr><td>Live payment gateway integration</td><td><span class="badge badge-planned">Planned</span></td></tr>
-          <tr><td>Image uploads via Supabase Storage</td><td><span class="badge badge-planned">Planned</span></td></tr>
+          <tr><td>Frontend UI (customer + admin)</td><td><span class="badge badge-done">Live</span></td></tr>
+          <tr><td>Database &amp; API layer (PostgreSQL + Prisma)</td><td><span class="badge badge-done">Live</span></td></tr>
+          <tr><td>Authentication &amp; role-based admin access</td><td><span class="badge badge-done">Live</span></td></tr>
+          <tr><td>Payment gateway (SSLCommerz, sandbox)</td><td><span class="badge badge-done">Live &amp; verified</span></td></tr>
+          <tr><td>Image uploads (Supabase Storage)</td><td><span class="badge badge-done">Live &amp; verified</span></td></tr>
+          <tr><td>Transactional email (Resend)</td><td><span class="badge badge-done">Live &amp; verified</span></td></tr>
+          <tr><td>Deployed on Vercel, tested in production</td><td><span class="badge badge-done">Live</span></td></tr>
+          <tr><td>Security hardening (rate limiting, auth audit, access control review)</td><td><span class="badge badge-done">Live</span></td></tr>
+          <tr><td>Contact form (real email delivery)</td><td><span class="badge badge-done">Live</span></td></tr>
+          <tr><td>Full QA pass across devices</td><td><span class="badge badge-planned">Planned</span></td></tr>
+          <tr><td>Client handover documentation</td><td><span class="badge badge-planned">Planned</span></td></tr>
         </tbody>
       </table>
     </div>
@@ -473,15 +774,15 @@
 
   <section>
     <div class="wrap">
-      <div class="section-label">What I'd do next</div>
-      <h2 class="section-title">Roadmap to full production</h2>
+      <div class="section-label">What's next</div>
+      <h2 class="section-title">Closing the loop for a real handover</h2>
       <p>
-        The remaining work follows a deliberate sequence: wire the admin dashboard and
-        storefront to real API routes backed by the Supabase database, add NextAuth-based
-        authentication to lock down the admin panel and support real customer accounts,
-        then layer in a live payment gateway suited to the target market, image uploads
-        through Supabase Storage, and transactional email notifications — each phase
-        tested in isolation before moving to the next.
+        The remaining work is deliberately about readiness, not features: a security-hardening
+        pass across every API route (rate limiting, dependency audit, a final review that no
+        customer can ever read another customer's data), a full device-by-device QA pass, and
+        client-handover documentation — an admin user guide, credential transfer, and a support
+        plan — so this isn't just a working product, but one a real, non-technical restaurant
+        owner could actually run their business on.
       </p>
     </div>
   </section>

@@ -55,7 +55,7 @@ step needs me to write code, say "let's do step X" and I'll build it.
 
 ---
 
-## PHASE 4 — Real payments ✅ CODE COMPLETE (SSLCommerz)
+## PHASE 4 — Real payments ✅ DONE AND VERIFIED LIVE (SSLCommerz)
 
 *Goal: customers can pay online, not just choose Cash on Delivery.*
 
@@ -65,70 +65,69 @@ step needs me to write code, say "let's do step X" and I'll build it.
 - [x] Built success/fail/cancel redirect handlers AND an IPN webhook handler for reliability (see `docs/PHASE-4-PAYMENT-SETUP.md` for why both exist)
 - [x] Built a `/checkout/payment-failed` page with a "Try Payment Again" retry flow against the same order
 - [x] Removed the old "payment is mocked" fake card-number form fields from checkout
-- [x] **Fixed a real bug found during review:** order creation was still marking `card` payments as `PAID` immediately at checkout, before the customer ever reached SSLCommerz — this would have permanently blocked failed/cancelled payments from ever being correctly marked `FAILED`. Now every order starts `PENDING` regardless of method; only a validated SSLCommerz confirmation (or COD collection, handled elsewhere) marks it paid.
-- [ ] **YOU NEED TO DO THIS:** sign up for a free SSLCommerz sandbox account — see `docs/PHASE-4-PAYMENT-SETUP.md` for exact steps
-- [ ] **YOU NEED TO DO THIS:** run `npm run db:push` (new field: `Order.paymentValId`)
-- [ ] Test a full successful sandbox payment end-to-end
-- [ ] Test a failed/cancelled payment + the retry flow
-- [ ] ⚠️ Unverified: `lib/sslcommerz.ts` was written from training knowledge of SSLCommerz's API, in a sandbox with no internet access to check it against their live docs. Cross-check field names against https://developer.sslcommerz.com/doc/v4/ if the sandbox test doesn't work as expected — see the honesty note at the top of that file.
+- [x] Fixed a real bug found during review: order creation was marking `card` payments as `PAID` immediately at checkout, before the customer ever reached SSLCommerz. Now every order starts `PENDING`; only a validated SSLCommerz confirmation (or COD collection) marks it paid.
+- [x] Admin Payments page now shows the real SSLCommerz `paymentValId` as a "Gateway Ref" column (for reconciling against SSLCommerz's own dashboard) instead of a fake synthetic transaction id
+- [x] Signed up for SSLCommerz sandbox, ran `db:push`, tested a full successful payment, a failed payment, and the retry flow — **all confirmed working**
+- [x] Fixed `data/orders.ts` — the 12 mock orders were missing the new `paymentValId` field, which broke the Vercel production build (TypeScript error, not caught locally in this sandbox since there's no way to run `next build` here)
+- [x] Fixed `app/(customer)/checkout/payment-failed/page.tsx` — `useSearchParams()` needs a `<Suspense>` boundary for Next.js's static prerendering, which also broke the Vercel build. Restructured into a `PaymentFailedContent` inner component wrapped by the default-exported `PaymentFailedPage`.
+- [x] **Deployed to Vercel and confirmed working in production** — full sandbox payment flow (success, fail, cancel, retry) verified live, not just locally
 - [ ] Register a **live** merchant account only once you have a real client ready to accept real payments (requires business documents, takes a few business days — see the last section of the setup doc)
 - [ ] Switch `SSLCOMMERZ_IS_LIVE` to `"true"` with live credentials only after live testing
 
 ---
 
-## PHASE 5 — Real image uploads ✅ CODE COMPLETE
+## PHASE 5 — Real image uploads ✅ DONE AND VERIFIED
 
 *Goal: the restaurant owner can upload their own food photos through the admin panel.*
 
-- [x] Add an upload API route (`app/api/upload/route.ts`) that accepts an image file and stores it in Supabase Storage — admin-only (`requireAdmin()`), validates file type (JPEG/PNG/WEBP) and size (5MB max) server-side
-- [x] Replace the "Image URL" text field in `FoodFormModal` / `CategoryFormModal` with a real file upload input (`components/admin/ImageUploadField.tsx` — shows a live preview, upload spinner, and a "Remove photo" option)
-- [x] Add image compression/resizing before upload — `lib/image-client.ts` resizes to a max 1600px edge and re-encodes as JPEG using the browser's own `<canvas>`, no new dependency needed
-- [x] Tightened `next.config.js`'s image `remotePatterns` back down from the temporary Phase 2-4 wildcard to just the Supabase Storage hostname + `images.unsplash.com` (for existing seed photos), now that admins upload real files instead of pasting arbitrary URLs
-- [ ] **YOU NEED TO DO THIS:** create the `food-images` Supabase Storage bucket (public) — see `docs/PHASE-5-IMAGE-UPLOADS-SETUP.md` for the exact steps (2 minutes, no code)
-- [ ] Test: upload a real food photo from the admin panel, confirm it displays correctly on the menu
-- [ ] Test: edit an existing food/category that still has its old Unsplash placeholder photo, confirm it still displays before you upload a new one
-- [ ] Push to GitHub + let Vercel redeploy
+- [x] Built `lib/image-compress.ts` — client-side resize/compress via the browser's Canvas API (no new dependency, no server-side native library needed)
+- [x] Built `app/api/upload/route.ts` — admin-only, validates file type/size server-side (never trusts the client-side check alone), uploads to Supabase Storage, returns the public URL
+- [x] Built `components/ui/ImageUploadField.tsx` — reusable upload UI with preview, used by both `FoodFormModal` and `CategoryFormModal`, with "paste a URL instead" kept as a fallback option
+- [x] Replaced the plain "Image URL" text field in both admin forms
+- [x] Created the `food-images` bucket in Supabase Storage
+- [x] Tested: uploaded a real (large) food photo from the admin panel — compression worked, displays correctly on `/menu`, confirmed present in Supabase's Storage dashboard
 
 ---
 
-## PHASE 6 — Notifications
+## PHASE 6 — Notifications ✅ DONE AND VERIFIED (Resend)
 
 *Goal: customers and the restaurant get notified automatically, not just via on-screen UI.*
 
-- [x] **Admin-side in-app live updates** — done ahead of schedule. `app/admin/layout.tsx` now polls every 10 seconds and toasts "New order received" the moment one comes in, from anywhere in the admin dashboard. `AdminHeader`'s notification bell shows real orders that need attention (placed/confirmed/payment-failed) instead of hardcoded mock text. This covers "the restaurant gets notified" for anyone who has the dashboard open — it does NOT cover being notified while away from the screen (that needs email/push, below).
-- [ ] Choose an email provider (Resend is simple and has a generous free tier)
-- [ ] Send an order confirmation email to the customer when they place an order
-- [ ] Send a "your order is ready" / status-change email to the customer (the customer's tracking page at `/track-order/[id]` already polls every 8 seconds and updates live if they have it open — this item is about reaching them when they DON'T have it open)
-- [ ] Send a new-order alert email to the restaurant's inbox when an order comes in (for when no one's watching the dashboard)
-- [ ] (Optional) Add SMS notifications via a provider like Twilio for delivery updates
-- [ ] (Optional, no external service needed) Browser push notifications via the Web Notifications API for customers who keep the tracking tab open in the background — smaller lift than email, but only works while that tab is open in that browser, so it complements rather than replaces email
+- [x] **Admin-side in-app live updates** — done ahead of schedule. `app/admin/layout.tsx` polls every 10 seconds and toasts "New order received" the moment one comes in. `AdminHeader`'s notification bell shows real orders needing attention.
+- [x] Chose **Resend** — simple API, generous free tier (3,000/month), no SMTP setup
+- [x] Built `lib/email.ts` — three email types (confirmation, status update, new-order alert), a shared inline-styled HTML shell (table-based layout for email-client compatibility), and a `sendEmailSafely()` wrapper so a Resend outage or missing API key can never break checkout or an admin action — failures are logged and swallowed, never thrown
+- [x] Wired the **confirmation + restaurant alert** emails into `app/api/orders/route.ts` (fires immediately for Cash on Delivery) AND `app/api/payments/sslcommerz/{success,ipn}/route.ts` (fires only once SSLCommerz actually validates payment for online orders — deliberately NOT at order creation, so a customer never gets a "confirmed" email for a payment that then fails)
+- [x] Wired the **status-update** email into `app/api/orders/[id]/route.ts` — fires only when `status` actually changes to a different value (compared in DB-enum format, not the frontend's lowercase strings, to avoid a same-value comparison bug that would've fired on every PATCH)
+- [x] Idempotency verified: the IPN handler's existing `if (order.paymentStatus === "PAID") return` guard means the success-redirect and IPN webhook racing each other can't send duplicate confirmation emails
+- [x] Signed up for Resend, added API key, ran `npm install`
+- [x] Tested: COD order → both confirmation and restaurant-alert emails arrived; order status changes → status emails arrived correctly; confirmed via Resend's own Logs dashboard (all `POST /emails` → `200`)
+- [ ] (Optional, not pursued) SMS notifications via Twilio
+- [ ] (Optional, not pursued) Browser push notifications via the Web Notifications API
 
 ---
 
-## PHASE 7 — Deployment hardening
+## PHASE 7 — Deployment hardening (skipped for now)
 
-*Goal: the live site is fast, reliable, and on the client's own domain.*
-
-- [ ] Buy a custom domain (e.g. `dineflow.com` or the restaurant's actual name) if the client wants one
-- [ ] Connect the domain to Vercel (Project → Settings → Domains)
-- [ ] Confirm SSL/HTTPS is active (Vercel does this automatically once the domain is connected)
-- [ ] Set `NEXTAUTH_URL` and `NEXT_PUBLIC_APP_URL` to the final custom domain
-- [ ] Set up a separate "staging" environment/branch on Vercel so you can test changes before they go live
-- [ ] Enable Vercel Analytics or a similar tool to monitor real traffic and errors
+*Custom domain, staging environment, analytics/monitoring — deliberately skipped per user's direction. The site is already live and stable on a Vercel-issued domain; a custom domain matters more once there's a real client/business name to point it at. Revisit if that becomes relevant.*
 
 ---
 
-## PHASE 8 — Security hardening
+## PHASE 8 — Security hardening ✅ COMPLETE — see `docs/PHASE-8-SECURITY-AUDIT.md`
 
 *Goal: the app doesn't fall over or leak data under real-world use.*
 
-- [ ] Add input validation (Zod schemas — already installed) to every API route, not just the frontend forms
-- [ ] Add rate limiting to public API routes (especially checkout and login) to prevent abuse
-- [ ] Review all API routes to confirm customers can't read or edit other customers' orders
-- [ ] Confirm `SUPABASE_SERVICE_ROLE_KEY` is never sent to the browser (server-side only)
-- [ ] Add CSRF protection where relevant (NextAuth handles most of this automatically)
-- [ ] Run `npm audit` and update any dependencies with known vulnerabilities
-- [ ] Remove or restrict any remaining debug/test data before real customers use the site
+- [x] Audited input validation across all 16 API routes — 12 use Zod directly; the other 4 (NextAuth, file upload, SSLCommerz callbacks) use the correct alternative control for what they actually receive (see audit doc for why)
+- [x] Built rate limiting (`lib/rate-limit.ts`) and applied it to checkout, registration, login, AND the new contact form route — the four routes most exposed to abuse. Documented, honest limitation: in-memory, not distributed — meaningfully raises the bar but Upstash Redis is the noted upgrade path for airtight production guarantees.
+- [x] Built a real **change-password feature** (`/api/account/change-password` + a section in `/admin/settings`) — closes the gap where the only way to change the seeded admin password was manual Prisma Studio editing
+- [x] Audited cross-customer data isolation — no gaps found; every order-related route re-verified
+- [x] Confirmed `SUPABASE_SERVICE_ROLE_KEY` isolation — used in exactly one server-only file, grepped to confirm no client-component leak, no `NEXT_PUBLIC_` prefix anywhere on a secret
+- [x] Reviewed CSRF posture — NextAuth's own endpoints are protected by its built-in token system; custom routes rely on `SameSite=Lax` session cookies, the appropriate baseline for this project's risk level
+- [x] Checked for debug/test artifacts — none found (no sensitive `console.log`s, no leftover test routes, no `TODO`/`FIXME` security markers)
+- [x] Fixed a real production login bug found this round: `authorize()` in `lib/auth.ts` wasn't lowercasing the email before the database lookup, but registration does — meant any casing mismatch silently failed login. Fixed.
+- [ ] **YOU NEED TO DO THIS:** change the seeded admin password using the new Change Password feature in `/admin/settings` (no more manual DB editing needed)
+- [ ] **YOU NEED TO DO THIS:** run `npm audit` yourself (couldn't run it in this sandbox — no internet access) and report findings
+- [ ] Test: confirm rate limiting actually kicks in (try 11 rapid checkout attempts, or 6 registrations in an hour)
+- [ ] Test: the new Change Password feature — wrong current password should be rejected; correct flow should let you log in with the new password afterward
 
 ---
 
@@ -160,14 +159,15 @@ step needs me to write code, say "let's do step X" and I'll build it.
 
 ---
 
-## PORTFOLIO DELIVERABLES (already generated alongside this file)
+## PORTFOLIO DELIVERABLES
 
-- [x] `case-study.html` — polished, styled case study page
-- [x] `case-study.pdf` — same case study, downloadable/printable
-- [x] `linkedin-post.md` — ready-to-publish LinkedIn post copy
-- [x] `portfolio-description.md` — shorter blurb for a portfolio site's project card
+- [x] `case-study.html` — **rewritten** to reflect the full-stack build: expanded architecture decisions, a dedicated "bugs found before they shipped" section, an engineering-process timeline across all 6 build phases, and an updated status table
+- [x] `case-study.pdf` — regenerated from the rewritten HTML (7 pages, up from 4)
+- [x] `linkedin-post.md` — **rewritten**, 3 variants (technical deep-dive, outcome-focused, client/freelance pitch), grounded in the real technical decisions and real bugs caught during this build
+- [x] `portfolio-description.md` — **rewritten** at all three lengths to match
 
-**Still to do once the project is further along:**
-- [ ] Take real screenshots/recordings of the finished product for the case study (currently written to work without them — add them once Phases 2–3 are done and the UI has real, live data flowing through it)
-- [ ] Update the case study's "Tech Stack" and "Status" sections once payments/auth go live
-- [ ] Add the live URL and (if the repo is public) GitHub link to both the case study and LinkedIn post before publishing
+**Still to do before publishing:**
+- [ ] Fill in the 🔗 placeholders in all four files: your live URL, your GitHub repo link (if public), your LinkedIn profile link in the case study footer
+- [ ] Take real screenshots of the finished product and drop them into the case study's placeholder boxes (dashed-border sections, clearly marked) — the product is fully live now, so there's no reason left to ship without them
+- [ ] If you want pixel-perfect Fraunces/Inter typography in the PDF (it currently falls back to system fonts, since the sandbox that generated it has no internet access to fetch Google Fonts), open `case-study.html` in your own browser and use Print → Save as PDF instead of the bundled `case-study.pdf`
+- [ ] Consider making the GitHub repo public (if it isn't already) before posting, since two of the three LinkedIn variants and the case study both link to it

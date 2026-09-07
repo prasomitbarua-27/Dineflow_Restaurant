@@ -26,8 +26,8 @@ export default function AboutPage() {
         {[
           {
             image:
-  "https://images.ctfassets.net/rric2f17v78a/4lDQ68azYdrmQ4ZkLs5M7b/ccfdeb359c65a4fa05e6e10ea78ca3ec/Kitchen-Design.jpg",
-title: "Our kitchen",
+              "https://images.ctfassets.net/rric2f17v78a/4lDQ68azYdrmQ4ZkLs5M7b/ccfdeb359c65a4fa05e6e10ea78ca3ec/Kitchen-Design.jpg",
+            title: "Our kitchen",
             copy: "Every dish is prepared fresh to order by a team that treats consistency as seriously as flavor.",
           },
           {

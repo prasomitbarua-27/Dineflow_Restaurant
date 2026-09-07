@@ -1,93 +1,101 @@
-# DineFlow — Restaurant Ordering & Management
+# DineFlow — Restaurant Management SaaS (Frontend Prototype)
 
-[![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=nextdotjs)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)](https://www.typescriptlang.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-316192?logo=postgresql)](https://supabase.com/)
-[![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?logo=prisma)](https://www.prisma.io/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
+DineFlow is a modern restaurant ordering and management platform, built as a portfolio
+project. It has two experiences in one codebase:
 
-DineFlow is a full-stack restaurant ordering and management platform built with Next.js, Prisma, Supabase, and NextAuth.js. It combines a customer storefront and an admin dashboard in one codebase, with real database-backed orders, authentication, payments, uploads, and analytics.
+- **Customer storefront** — browse the menu, search & filter, view food details, add to
+  cart, check out, and track an order in real time.
+- **Admin dashboard** — manage foods, categories, and orders; review payments; view sales
+  analytics; and configure restaurant settings.
 
----
-
-## Overview
-
-DineFlow is designed as a production-style portfolio project for a real restaurant workflow.
-
-- **Customer experience:** browse the menu, filter and search dishes, add items to cart, place orders, pay online or by Cash on Delivery, and track order status in real time.
-- **Admin experience:** manage foods, categories, orders, payments, analytics, and restaurant settings behind role-based authentication.
-
-The app uses real PostgreSQL data on Supabase, not `localStorage` or mock-only state. Seed files are included only for initial setup and reference.
+> **This is a frontend prototype.** It uses realistic mock data and local/browser state.
+> There is no real database, authentication, payment gateway, or AI integration yet — see
+> [Future Roadmap](#future-roadmap) for how those slot in later.
 
 ---
 
 ## Features
 
 ### Customer
-- Browse featured categories and popular dishes.
-- Search, filter, and sort menu items.
-- View food details with related items.
-- Manage cart quantities and totals.
-- Register and log in with secure credentials.
-- Checkout with Cash on Delivery or SSLCommerz online payment.
-- Track live order status.
-- View order history for the signed-in customer.
+- Home page (hero, featured categories, popular dishes, story, CTA)
+- Full menu with search, category tabs, price filter, and sorting
+- Food details page with quantity selector and related dishes
+- Cart with quantity controls, subtotal/delivery/total, persisted to `localStorage`
+- Checkout (customer info, delivery/pickup, mock payment method, order summary)
+- Order confirmation page
+- Visual order tracker (Placed → Confirmed → Preparing → Ready → Completed)
+- My Orders history page (with loading & empty states)
+- Login / Register (UI-only, mock authentication)
 
 ### Admin
-- View dashboard stats and charts.
-- Create, edit, delete, and toggle foods and categories.
-- Upload and manage real photos.
-- Update order status in real time.
-- Review payment summaries and transactions.
-- Analyze revenue, category performance, and top foods.
-- Manage restaurant info and delivery preferences.
-- Restrict all admin actions to authenticated `ADMIN` users.
+- Dashboard with stat cards, revenue/order charts, popular foods, recent orders
+- Food management — add / edit / delete / toggle availability
+- Category management — add / edit / delete / toggle visibility
+- Order management — filter by status, update order status (reflected in customer tracking)
+- Payment overview — revenue summary + transaction table (mock)
+- Analytics — 30-day trends, category performance, average order value
+- Settings — restaurant info, opening hours, currency & delivery preferences
+
+All admin CRUD operations use shared React Context + `localStorage`, so changes made in
+the admin dashboard (e.g. marking a food unavailable, or moving an order to "Preparing")
+are immediately reflected on the customer-facing site — without a real backend.
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-| --- | --- |
-| Framework | Next.js 14 (App Router) |
-| Language | TypeScript |
-| Styling | Tailwind CSS |
-| UI Icons | lucide-react |
-| Charts | Recharts |
-| Database | PostgreSQL on Supabase |
-| ORM | Prisma |
-| Authentication | NextAuth.js (Credentials + JWT) |
-| Storage | Supabase Storage |
-| Payments | SSLCommerz |
-| Email | Resend |
-| Validation | Zod |
+| Layer       | Choice                                   |
+|-------------|-------------------------------------------|
+| Framework   | Next.js 14 (App Router)                   |
+| Language    | TypeScript                                |
+| Styling     | Tailwind CSS                              |
+| Icons       | lucide-react                              |
+| Charts      | Recharts                                  |
+| State       | React Context + hooks, `localStorage`     |
 
----
-
-## Screenshots
-
-> Add screenshots or a short GIF here if available. A visual preview usually improves the README more than extra text. [web:68][web:73]
+No database, ORM, auth library, or payment SDK is included yet — by design, for this phase.
 
 ---
 
 ## Project Structure
 
-```txt
+```
 dineflow/
 ├─ app/
-│  ├─ (customer)/
-│  ├─ admin/
-│  ├─ api/
-│  ├─ layout.tsx
+│  ├─ (customer)/          # customer-facing route group (has Navbar + Footer)
+│  │  ├─ page.tsx           # home
+│  │  ├─ menu/page.tsx
+│  │  ├─ menu/[id]/page.tsx
+│  │  ├─ cart/page.tsx
+│  │  ├─ checkout/page.tsx
+│  │  ├─ order-confirmation/[id]/page.tsx
+│  │  ├─ track-order/[id]/page.tsx
+│  │  ├─ my-orders/page.tsx
+│  │  ├─ login/page.tsx
+│  │  ├─ register/page.tsx
+│  │  ├─ about/page.tsx
+│  │  └─ contact/page.tsx
+│  ├─ admin/                # admin dashboard route group (has Sidebar + Header)
+│  │  ├─ page.tsx           # dashboard overview
+│  │  ├─ foods/page.tsx
+│  │  ├─ categories/page.tsx
+│  │  ├─ orders/page.tsx
+│  │  ├─ payments/page.tsx
+│  │  ├─ analytics/page.tsx
+│  │  └─ settings/page.tsx
+│  ├─ layout.tsx            # root layout — fonts + context providers
 │  └─ globals.css
 ├─ components/
-├─ context/
-├─ lib/
-├─ prisma/
-├─ data/
-├─ docs/
-├─ types/
-├─ middleware.ts
+│  ├─ ui/                   # Button, Input, Modal, Badge, EmptyState, etc.
+│  ├─ layout/                # Navbar, Footer
+│  ├─ customer/               # Hero, FoodCard, CategoryCard, MenuBrowser, …
+│  ├─ cart/                    # CartItemRow, CartSummary
+│  ├─ order/                    # OrderTracker, OrderStatusBadge, OrderCard
+│  └─ admin/                     # Sidebar, StatCard, charts, form modals, …
+├─ context/                  # CatalogContext, CartContext, OrderContext, ToastContext
+├─ data/                     # mock foods, categories, orders, analytics, payments
+├─ lib/                      # utils.ts (formatting, id generation, etc.)
+├─ types/                    # shared TypeScript interfaces
 └─ public/
 ```
 
@@ -95,107 +103,101 @@ dineflow/
 
 ## Getting Started
 
-### Prerequisites
-- Node.js 18.17 or newer.
-- A Supabase project.
-- SSLCommerz credentials for online payment testing.
-- Resend API key for emails.
+**Prerequisites:** [Node.js](https://nodejs.org) 18.17 or newer.
 
-### 1. Install dependencies
-```bash
-npm install
-```
+1. **Install dependencies**
 
-### 2. Set up environment variables
-Copy `.env.example` to `.env` and `.env.local`, then fill in the required values for:
-- Supabase database URL
-- Supabase project URL and keys
-- `NEXTAUTH_URL`
-- `NEXTAUTH_SECRET`
-- SSLCommerz credentials
-- Resend API key
+   ```bash
+   npm install
+   ```
 
-### 3. Push and seed the database
-```bash
-npm run db:push
-npm run db:seed
-```
+2. **Start the development server**
 
-### 4. Start the development server
-```bash
-npm run dev
-```
+   ```bash
+   npm run dev
+   ```
 
-### 5. Open the app
-- Customer site: `http://localhost:3000`
-- Admin dashboard: `http://localhost:3000/admin`
+3. **Open the app**
+
+   Visit [http://localhost:3000](http://localhost:3000) in your browser.
+
+   - Customer site: `http://localhost:3000`
+   - Admin dashboard: `http://localhost:3000/admin`
+
+No environment variables or additional setup are required — everything runs on mock data.
 
 ---
 
 ## Available Routes
 
-| Route | Description |
-| --- | --- |
-| `/` | Home page |
-| `/menu` | Menu browsing, filters, and sorting |
-| `/menu/[id]` | Food details |
-| `/cart` | Shopping cart |
-| `/checkout` | Checkout flow |
-| `/checkout/payment-failed` | Retry failed payment |
-| `/order-confirmation/[id]` | Order success page |
-| `/track-order/[id]` | Live order status tracker |
-| `/my-orders` | Customer order history |
-| `/login`, `/register` | Authentication |
-| `/about`, `/contact` | Informational pages |
-| `/admin` | Admin dashboard overview |
-| `/admin/foods` | Food management |
-| `/admin/categories` | Category management |
-| `/admin/orders` | Order management |
-| `/admin/payments` | Payment overview |
-| `/admin/analytics` | Sales analytics |
-| `/admin/settings` | Restaurant settings |
+| Route                              | Description                          |
+|-------------------------------------|---------------------------------------|
+| `/`                                  | Home page                             |
+| `/menu`                              | Menu browsing, search & filters       |
+| `/menu/[id]`                         | Food details                          |
+| `/cart`                              | Shopping cart                         |
+| `/checkout`                          | Checkout flow                         |
+| `/order-confirmation/[id]`           | Order success page                    |
+| `/track-order/[id]`                  | Live order status tracker             |
+| `/my-orders`                         | Order history                         |
+| `/login`, `/register`                | Mock authentication UI                |
+| `/about`, `/contact`                 | Informational pages                   |
+| `/admin`                             | Admin dashboard overview              |
+| `/admin/foods`                       | Food management                       |
+| `/admin/categories`                  | Category management                   |
+| `/admin/orders`                      | Order management                      |
+| `/admin/payments`                    | Payment overview                      |
+| `/admin/analytics`                   | Sales analytics                       |
+| `/admin/settings`                    | Restaurant settings                   |
 
 ---
 
-## Seed Data
+## Mock Data
 
-The `data/*.ts` files are used for initial database seeding and reference only.
+All mock data lives in `data/`:
 
-- `foods.ts` — starter menu items.
-- `categories.ts` — starter categories.
-- `restaurant.ts` — restaurant settings and profile.
-- `orders.ts`, `payments.ts`, `analytics.ts` — historical reference only.
+- `foods.ts` — 20 menu items across 6 categories, priced in BDT (৳)
+- `categories.ts` — Burgers, Pizza, Chicken, Pasta, Desserts, Drinks
+- `orders.ts` — 12 sample orders in various statuses
+- `analytics.ts` — 7-day and 30-day revenue/order series, category performance
+- `payments.ts` — transactions derived from the mock orders
+- `restaurant.ts` — restaurant profile, opening hours, preferences
 
----
-
-## Roadmap
-
-See `ROADMAP.md` for the full phase-by-phase status and `progress.md` for the session history.
-
-| Phase | Status |
-| --- | --- |
-| Database | Done |
-| Authentication | Done |
-| Payments | Done |
-| Image uploads | Done |
-| Notifications | Done |
-| Deployment hardening | Pending |
-| Security hardening | Pending |
-| QA and testing | Pending |
-| Client handover | Pending |
+Data created or edited at runtime (cart contents, placed orders, admin food/category
+edits) is kept in React Context and persisted to the browser's `localStorage`, so it
+survives a page refresh but is local to your browser only.
 
 ---
 
-## Notes for Development
+## Future Roadmap
 
-- Run `npm run lint` before committing changes.
-- Use `useCatalog()` and `useOrders()` for client-side data access.
-- Keep shared design tokens in `tailwind.config.ts`.
-- Protect server mutations with `requireAdmin()` or equivalent server-side checks.
-- Keep the README aligned with the actual implementation so it remains trustworthy.
+This version is intentionally frontend-only. The next phases (not implemented yet):
+
+| Mock (today)              | Planned replacement                  |
+|-----------------------------|----------------------------------------|
+| Mock food/category data     | PostgreSQL + Prisma                    |
+| Mock login/register UI      | Real authentication (e.g. NextAuth)    |
+| Mock payment method UI      | Stripe (or local payment gateway)      |
+| Mock order state            | Real backend API + database            |
+| —                            | Customer management module             |
+| —                            | Inventory management                   |
+| —                            | Delivery driver management             |
+| —                            | AI-powered features (OpenAI API)       |
+
+The codebase is structured so these can be added incrementally: mock data in `data/`
+mirrors the shape a real API would return (see `types/index.ts`), and all data access
+goes through `context/` — so swapping local state for real API calls later means editing
+those files, not every page that uses them.
 
 ---
 
-## License
+## Notes for Continued Development
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+- Run `npm run lint` to check for lint issues as you add features.
+- Component and folder naming follows a consistent pattern — see `components/` for
+  examples before adding new ones.
+- Colors, fonts, and spacing are defined once in `tailwind.config.ts` — adjust the
+  palette there rather than hardcoding new colors in components.
+- `context/CatalogContext.tsx` is the single source of truth for foods & categories;
+  read from it with `useCatalog()` rather than importing `data/foods.ts` directly in new
+  components, so admin edits stay reflected everywhere.
