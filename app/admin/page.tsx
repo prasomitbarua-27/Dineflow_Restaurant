@@ -1,111 +1,267 @@
 "use client";
 
-import { useEffect } from "react";
-import { Wallet, ShoppingCart, Clock3, CheckCircle2 } from "lucide-react";
-import { StatCard } from "@/components/admin/StatCard";
-import { RevenueChart } from "@/components/admin/RevenueChart";
-import { OrdersChart } from "@/components/admin/OrdersChart";
-import { PopularFoodsList } from "@/components/admin/PopularFoodsList";
-import { RecentOrdersTable } from "@/components/admin/RecentOrdersTable";
+import { useEffect, useState } from "react";
+import { Save, KeyRound } from "lucide-react";
+import { defaultRestaurantSettings } from "@/data/restaurant";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { useOrders } from "@/context/OrderContext";
-import { useCatalog } from "@/context/CatalogContext";
-import { buildDailyStats } from "@/lib/analytics";
-import { formatCurrency } from "@/lib/utils";
+import { useToast } from "@/context/ToastContext";
+import { RestaurantSettings } from "@/types";
 
-function isToday(iso: string) {
-  const d = new Date(iso);
-  const now = new Date();
-  return (
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
-  );
-}
+export default function AdminSettingsPage() {
+  const { showToast } = useToast();
+  const [settings, setSettings] = useState<RestaurantSettings>(defaultRestaurantSettings);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
-export default function AdminDashboardPage() {
-  const { orders, isLoading: ordersLoading, loadAll } = useOrders();
-  const { foods, isLoading: catalogLoading } = useCatalog();
-  const isLoading = ordersLoading || catalogLoading;
+  // Password change is a separate form/state entirely — deliberately not
+  // part of `settings`, since it has its own validation, its own submit
+  // handler, and shouldn't be cleared or resubmitted just because the
+  // restaurant-info form saves.
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  // Safe to fetch every order here — middleware.ts already keeps
-  // non-admins from ever reaching this page, and the API route
-  // double-checks the admin role server-side too.
   useEffect(() => {
-    loadAll();
+    let cancelled = false;
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) setSettings(data);
+      })
+      .catch(() => {
+        showToast("Couldn't load settings — showing defaults", "error");
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Computed from real orders in the database, not static mock data — the
-  // stat cards below AND the 7-day trend charts are both genuinely live,
-  // via lib/analytics.ts's buildDailyStats() (bucketed by real order
-  // createdAt timestamps, revenue counted only for paid orders).
-  const todaysOrders = orders.filter((o) => isToday(o.createdAt));
-  const todayRevenue = todaysOrders
-    .filter((o) => o.paymentStatus === "paid")
-    .reduce((sum, o) => sum + o.total, 0);
-  const pendingOrders = orders.filter((o) => ["placed", "confirmed", "preparing"].includes(o.status)).length;
-  const completedOrders = orders.filter((o) => o.status === "completed").length;
+  function updateHours(day: string, field: "isOpen" | "open" | "close", value: string | boolean) {
+    setSettings((prev) => ({
+      ...prev,
+      openingHours: prev.openingHours.map((h) => (h.day === day ? { ...h, [field]: value } : h)),
+    }));
+  }
 
-  const popularFoods = foods.filter((f) => f.isPopular).slice(0, 5);
-  const dailyStats = buildDailyStats(orders, 7);
-  const recentOrders = [...orders]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 6);
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to save settings");
+      }
+      const updated = await res.json();
+      setSettings(updated);
+      showToast("Settings saved", "success");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Couldn't save settings", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (passwordForm.newPassword.length < 6) {
+      showToast("New password must be at least 6 characters", "error");
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      showToast("New passwords don't match", "error");
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const res = await fetch("/api/account/change-password", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to change password");
+      }
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      showToast("Password changed", "success");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Couldn't change password", "error");
+    } finally {
+      setIsChangingPassword(false);
+    }
+  }
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 w-full rounded-2xl" />
-          ))}
-        </div>
-        <Skeleton className="h-80 w-full rounded-2xl" />
+      <div className="max-w-4xl space-y-6">
+        <Skeleton className="h-48 w-full rounded-2xl" />
+        <Skeleton className="h-64 w-full rounded-2xl" />
+        <Skeleton className="h-40 w-full rounded-2xl" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Today's Revenue" value={formatCurrency(todayRevenue)} icon={Wallet} />
-        <StatCard label="Today's Orders" value={String(todaysOrders.length)} icon={ShoppingCart} />
-        <StatCard label="Pending Orders" value={String(pendingOrders)} icon={Clock3} />
-        <StatCard label="Completed Orders" value={String(completedOrders)} icon={CheckCircle2} />
-      </div>
+    <div className="max-w-4xl space-y-6">
+      <form onSubmit={handleSave} className="space-y-6">
+        {/* Restaurant information */}
+        <section className="rounded-2xl border border-ink-100 bg-white p-6 shadow-card">
+          <h2 className="font-display text-lg font-semibold text-ink-900">Restaurant Information</h2>
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Input
+              label="Restaurant name"
+              value={settings.name}
+              onChange={(e) => setSettings({ ...settings, name: e.target.value })}
+            />
+            <Input
+              label="Phone"
+              value={settings.phone}
+              onChange={(e) => setSettings({ ...settings, phone: e.target.value })}
+            />
+            <Input
+              label="Email"
+              type="email"
+              value={settings.email}
+              onChange={(e) => setSettings({ ...settings, email: e.target.value })}
+            />
+            <Input
+              label="Address"
+              value={settings.address}
+              onChange={(e) => setSettings({ ...settings, address: e.target.value })}
+            />
+          </div>
+        </section>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="rounded-2xl border border-ink-100 bg-white p-5 shadow-card lg:col-span-2">
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-base font-semibold text-ink-900">Revenue — Last 7 Days</h2>
+        {/* Opening hours */}
+        <section className="rounded-2xl border border-ink-100 bg-white p-6 shadow-card">
+          <h2 className="font-display text-lg font-semibold text-ink-900">Opening Hours</h2>
+          <div className="mt-4 space-y-2.5">
+            {settings.openingHours.map((h) => (
+              <div key={h.day} className="flex flex-wrap items-center gap-3 rounded-xl border border-ink-100 p-3">
+                <span className="w-24 shrink-0 text-sm font-medium text-ink-800">{h.day}</span>
+                <label className="flex items-center gap-2 text-sm text-ink-600">
+                  <input
+                    type="checkbox"
+                    checked={h.isOpen}
+                    onChange={(e) => updateHours(h.day, "isOpen", e.target.checked)}
+                    className="h-4 w-4 rounded border-ink-300 text-ember-500 focus:ring-ember-400"
+                  />
+                  Open
+                </label>
+                {h.isOpen ? (
+                  <div className="flex flex-1 flex-wrap items-center gap-2">
+                    <input
+                      type="time"
+                      value={h.open}
+                      onChange={(e) => updateHours(h.day, "open", e.target.value)}
+                      className="h-9 rounded-lg border border-ink-200 px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ember-400/50"
+                      aria-label={`${h.day} opening time`}
+                    />
+                    <span className="text-sm text-ink-400">to</span>
+                    <input
+                      type="time"
+                      value={h.close}
+                      onChange={(e) => updateHours(h.day, "close", e.target.value)}
+                      className="h-9 rounded-lg border border-ink-200 px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ember-400/50"
+                      aria-label={`${h.day} closing time`}
+                    />
+                  </div>
+                ) : (
+                  <span className="text-sm text-ink-400">Closed</span>
+                )}
+              </div>
+            ))}
           </div>
-          <div className="mt-2">
-            <RevenueChart data={dailyStats} />
-          </div>
-        </div>
-        <div className="rounded-2xl border border-ink-100 bg-white p-5 shadow-card">
-          <h2 className="font-display text-base font-semibold text-ink-900">Top Selling Foods</h2>
-          <div className="mt-4">
-            <PopularFoodsList foods={popularFoods} />
-          </div>
-        </div>
-      </div>
+        </section>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="rounded-2xl border border-ink-100 bg-white p-5 shadow-card lg:col-span-1">
-          <h2 className="font-display text-base font-semibold text-ink-900">Orders — Last 7 Days</h2>
-          <div className="mt-2">
-            <OrdersChart data={dailyStats} />
+        {/* Preferences */}
+        <section className="rounded-2xl border border-ink-100 bg-white p-6 shadow-card">
+          <h2 className="font-display text-lg font-semibold text-ink-900">Restaurant Preferences</h2>
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Select
+              label="Currency"
+              value={settings.currency}
+              onChange={(e) => setSettings({ ...settings, currency: e.target.value })}
+            >
+              <option value="BDT">BDT (৳)</option>
+              <option value="USD">USD ($)</option>
+            </Select>
+            <Input
+              label="Delivery fee (৳)"
+              type="number"
+              min={0}
+              value={settings.deliveryFee}
+              onChange={(e) => setSettings({ ...settings, deliveryFee: Number(e.target.value) })}
+            />
+            <Input
+              label="Minimum order (৳)"
+              type="number"
+              min={0}
+              value={settings.minimumOrder}
+              onChange={(e) => setSettings({ ...settings, minimumOrder: Number(e.target.value) })}
+            />
           </div>
+        </section>
+
+        <Button type="submit" disabled={isSaving}>
+          <Save className="h-4 w-4" /> {isSaving ? "Saving…" : "Save Settings"}
+        </Button>
+      </form>
+
+      {/* Change password — a separate form/action from restaurant settings above */}
+      <form onSubmit={handleChangePassword} className="rounded-2xl border border-ink-100 bg-white p-6 shadow-card">
+        <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-ink-900">
+          <KeyRound className="h-5 w-5 text-ember-500" /> Change Password
+        </h2>
+        <p className="mt-1 text-sm text-ink-500">
+          If you&apos;re still using the default password from initial setup, change it now.
+        </p>
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Input
+            label="Current password"
+            type="password"
+            value={passwordForm.currentPassword}
+            onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+            required
+          />
+          <Input
+            label="New password"
+            type="password"
+            value={passwordForm.newPassword}
+            onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+            required
+          />
+          <Input
+            label="Confirm new password"
+            type="password"
+            value={passwordForm.confirmPassword}
+            onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+            required
+          />
         </div>
-        <div className="rounded-2xl border border-ink-100 bg-white p-5 shadow-card lg:col-span-2">
-          <h2 className="font-display text-base font-semibold text-ink-900">Recent Orders</h2>
-          <div className="mt-3">
-            <RecentOrdersTable orders={recentOrders} />
-          </div>
-        </div>
-      </div>
+        <Button type="submit" variant="outline" className="mt-4" disabled={isChangingPassword}>
+          {isChangingPassword ? "Changing…" : "Change Password"}
+        </Button>
+      </form>
     </div>
   );
 }
