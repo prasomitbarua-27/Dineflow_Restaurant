@@ -233,8 +233,8 @@ export default function AdminSettingsPage() {
           <KeyRound className="h-5 w-5 text-ember-500" /> Change Password
         </h2>
         <p className="mt-1 text-sm text-ink-500">
-          If you're still using the default password from initial setup, change it now.
-        </p>
+  If you&apos;re still using the default password from initial setup, change it now.
+</p>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Input
             label="Current password"
