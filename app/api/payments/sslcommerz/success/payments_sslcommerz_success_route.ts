@@ -31,7 +31,14 @@ export async function POST(req: NextRequest) {
 
     if (valId && order.paymentStatus !== "PAID") {
       const validation = await validateSSLCommerzPayment(valId);
-      if (validation.isValid) {
+      // ── SECURITY FIX ──────────────────────────────────────────────
+      // validateSSLCommerzPayment() only proves val_id is genuinely
+      // valid for *some* SSLCommerz transaction — it does NOT prove
+      // that transaction was for THIS order. Without checking the
+      // amount, anyone could pay for a cheap order, grab that valid
+      // val_id, then resubmit this endpoint with value_a pointed at a
+      // more expensive order id and get it marked PAID for free.
+      if (validation.isValid && validation.amount === order.total) {
         const updated = await prisma.order.update({
           where: { id: orderId },
           data: { paymentStatus: "PAID", paymentValId: valId },

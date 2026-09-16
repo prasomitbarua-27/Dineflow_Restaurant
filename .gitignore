@@ -9,3 +9,5 @@ npm-debug.log*
 /prisma/migrations/dev.db*
 *.tsbuildinfo
 /supabase
+
+.vercel

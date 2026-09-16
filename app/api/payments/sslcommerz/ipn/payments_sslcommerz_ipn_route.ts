@@ -42,10 +42,16 @@ export async function POST(req: NextRequest) {
     }
 
     const validation = await validateSSLCommerzPayment(valId);
+    // ── SECURITY FIX (same as success/route.ts) ─────────────────────
+    // A valid val_id only proves SOME transaction cleared — it doesn't
+    // prove it was for THIS order's amount. Require both before paying
+    // the order out, or a val_id from a cheap order could be replayed
+    // against a pricier one via this webhook.
+    const isGenuinelyPaid = validation.isValid && validation.amount === order.total;
 
     const updated = await prisma.order.update({
       where: { id: orderId },
-      data: validation.isValid
+      data: isGenuinelyPaid
         ? { paymentStatus: "PAID", paymentValId: valId }
         : { paymentStatus: "FAILED" },
       include: { items: true },
@@ -55,7 +61,7 @@ export async function POST(req: NextRequest) {
     // so this only ever fires the first time an order is validated as
     // paid — if the success-redirect handler already sent these emails
     // moments earlier, the IPN webhook won't send them again.
-    if (validation.isValid) {
+    if (isGenuinelyPaid) {
       const settings = await prisma.restaurantSettings.findUnique({ where: { id: "singleton" } });
       const serialized = serializeOrder(updated);
       await Promise.all([

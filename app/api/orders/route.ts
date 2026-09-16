@@ -62,6 +62,53 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
   const body = await req.json();
   const input = placeOrderInputSchema.parse(body);
 
+  // ── SECURITY FIX ──────────────────────────────────────────────────
+  // `input.items[].price`, `input.subtotal`, `input.deliveryFee`, and
+  // `input.total` all come straight from the client's request body.
+  // They were previously trusted as-is and written directly to the
+  // database, which means anyone could submit any price/total they
+  // wanted (e.g. $0.01 for every item) by calling this API directly —
+  // the browser UI never enforced anything server-side.
+  //
+  // Fix: re-derive every price from the database's own Food records,
+  // and recompute subtotal/deliveryFee/total from those real prices.
+  // The client's items are only trusted for *which* foodId + quantity
+  // the customer wants — never for what anything costs.
+  const foodIds = [...new Set(input.items.map((item) => item.foodId))];
+  const foods = await prisma.food.findMany({ where: { id: { in: foodIds } } });
+  const foodMap = new Map(foods.map((food) => [food.id, food]));
+
+  for (const item of input.items) {
+    const food = foodMap.get(item.foodId);
+    if (!food || !food.isAvailable) {
+      return apiError(
+        `"${item.name}" is no longer available. Please refresh your cart and try again.`,
+        400
+      );
+    }
+  }
+
+  const settings = await prisma.restaurantSettings.findUnique({ where: { id: "singleton" } });
+  const deliveryFee =
+    input.orderType === "delivery"
+      ? settings?.deliveryFee ?? defaultRestaurantSettings.deliveryFee
+      : 0;
+
+  const trustedItems = input.items.map((item) => {
+    const food = foodMap.get(item.foodId)!;
+    return {
+      foodId: food.id,
+      name: food.name,
+      price: food.price, // ← from the DB, never from the client
+      quantity: item.quantity,
+      image: food.image ?? item.image ?? "",
+    };
+  });
+
+  const subtotal = trustedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = subtotal + deliveryFee;
+  // ── end fix ───────────────────────────────────────────────────────
+
   // Every order starts PENDING regardless of payment method. Cash stays
   // pending until collected on delivery/pickup. Card/mobile-banking orders
   // ALSO start pending — they only flip to PAID once SSLCommerz actually
@@ -94,18 +141,12 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
           paymentMethod: paymentMethodToDb(input.paymentMethod),
           paymentStatus,
           status: "PLACED",
-          subtotal: input.subtotal,
-          deliveryFee: input.deliveryFee,
-          total: input.total,
+          subtotal,
+          deliveryFee,
+          total,
           estimatedReadyMinutes: 25 + Math.round(Math.random() * 15),
           items: {
-            create: input.items.map((item) => ({
-              foodId: item.foodId,
-              name: item.name,
-              price: item.price,
-              quantity: item.quantity,
-              image: item.image,
-            })),
+            create: trustedItems,
           },
         },
         include: { items: true },
@@ -133,7 +174,6 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
   // sendEmailSafely() never throws, so a Resend outage or missing API key
   // can't fail the checkout itself, only skip the email.
   if (input.paymentMethod === "cash") {
-    const settings = await prisma.restaurantSettings.findUnique({ where: { id: "singleton" } });
     await Promise.all([
       sendOrderConfirmationEmail(serialized),
       sendNewOrderAlertEmail(serialized, settings?.email || defaultRestaurantSettings.email),
